@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Gemini Chatbot — UI Preview</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:#09090b;color:#f4f4f5;height:100vh;display:flex;overflow:hidden}
+
+/* ── SIDEBAR ── */
+aside{width:256px;flex-shrink:0;display:flex;flex-direction:column;background:#18181b;border-right:1px solid #27272a}
+.sb-header{padding:16px;border-bottom:1px solid #27272a}
+.btn-new{width:100%;display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;background:#4f46e5;color:#fff;font-size:13px;font-weight:500;border:none;border-radius:12px;cursor:pointer}
+.btn-new svg{width:16px;height:16px}
+.sessions{flex:1;overflow-y:auto;padding:8px}
+.session{width:100%;display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:8px;border:none;cursor:pointer;text-align:left;background:transparent;color:#a1a1aa}
+.session.active{background:#3f3f46;color:#f4f4f5}
+.session-icon{width:14px;height:14px;margin-top:2px;flex-shrink:0;color:#71717a}
+.session-body{flex:1;min-width:0}
+.session-title{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:inherit}
+.session-time{font-size:10px;color:#52525b;margin-top:2px}
+.sb-bottom{flex-shrink:0;border-top:1px solid #27272a;padding:16px;display:flex;flex-direction:column;gap:12px}
+.label{font-size:11px;color:#71717a;margin-bottom:6px}
+.model-select{width:100%;background:#27272a;border:1px solid #3f3f46;color:#f4f4f5;font-size:12px;border-radius:8px;padding:7px 28px 7px 10px;appearance:none;cursor:pointer}
+.select-wrap{position:relative}
+.select-wrap svg{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:#71717a;pointer-events:none}
+.sys-prompt-btn{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:#71717a;background:none;border:none;cursor:pointer;width:100%;padding:0}
+
+/* ── MAIN ── */
+main{flex:1;display:flex;flex-direction:column;min-width:0}
+header{display:flex;align-items:center;justify-content:flex-end;padding:10px 16px;border-bottom:1px solid #27272a;background:#09090b;flex-shrink:0}
+.icon-btn{padding:8px;background:none;border:none;color:#71717a;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.icon-btn svg{width:16px;height:16px}
+
+/* ── MESSAGES ── */
+.messages{flex:1;overflow-y:auto;padding:24px 16px}
+.msg-list{max-width:768px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.msg-row{display:flex}
+.msg-row.user{justify-content:flex-end}
+.msg-row.model{justify-content:flex-start}
+.bubble-wrap{max-width:75%}
+.bubble{border-radius:16px;padding:12px 16px}
+.msg-row.user .bubble{background:#4f46e5;color:#fff;border-bottom-right-radius:4px}
+.msg-row.model .bubble{background:#27272a;color:#f4f4f5;border-bottom-left-radius:4px}
+.bubble p{font-size:14px;line-height:1.6;white-space:pre-wrap}
+.msg-footer{display:flex;align-items:center;gap:6px;margin-top:4px;padding:0 4px}
+.msg-row.user .msg-footer{justify-content:flex-end}
+.ts{font-size:11px;color:#52525b}
+.copy-btn{padding:6px;background:none;border:none;border-radius:6px;color:#71717a;cursor:pointer;display:flex;align-items:center}
+.copy-btn svg{width:13px;height:13px}
+
+/* markdown-ish in bubble */
+.bubble strong{color:#f4f4f5;font-weight:600}
+.bubble .code-inline{background:#3f3f46;color:#a5b4fc;padding:1px 6px;border-radius:4px;font-family:monospace;font-size:12px}
+.code-block{background:#1c1c27;border-radius:8px;padding:12px 14px;margin:8px 0;overflow-x:auto}
+.code-block code{color:#cdd6f4;font-family:'Fira Code',monospace;font-size:12px;line-height:1.7;white-space:pre}
+.kw{color:#cba6f7}.fn{color:#89b4fa}.str{color:#a6e3a1}.cm{color:#585b70}.num{color:#fab387}
+.bubble-text{font-size:14px;line-height:1.7;color:#e4e4e7}
+.bubble-text p{margin-bottom:6px}
+
+/* typing dots */
+.dots{display:flex;gap:4px;align-items:center;padding:4px 0}
+.dot{width:8px;height:8px;background:#818cf8;border-radius:50%;animation:blink 1.2s infinite}
+.dot:nth-child(2){animation-delay:.15s}
+.dot:nth-child(3){animation-delay:.3s}
+@keyframes blink{0%,80%,100%{transform:translateY(0);opacity:.6}40%{transform:translateY(-5px);opacity:1}}
+
+/* ── INPUT BAR ── */
+.input-area{flex-shrink:0;border-top:1px solid #27272a;background:#09090b;padding:16px}
+.input-inner{max-width:768px;margin:0 auto}
+.input-box{display:flex;align-items:flex-end;gap:8px;background:#27272a;border:1px solid #4f46e5;border-radius:18px;padding:10px 14px}
+textarea{flex:1;background:transparent;border:none;outline:none;color:#f4f4f5;font-size:13px;resize:none;font-family:inherit;line-height:1.5;max-height:120px}
+textarea::placeholder{color:#52525b}
+.char-count{font-size:11px;color:#3f3f46}
+.send-btn{padding:8px;background:#4f46e5;border:none;border-radius:10px;color:#fff;cursor:pointer;display:flex;align-items:center;flex-shrink:0}
+.send-btn svg{width:15px;height:15px}
+.cancel-btn{padding:8px;background:#3f3f46;border:none;border-radius:10px;color:#d4d4d8;cursor:pointer;display:flex;align-items:center;flex-shrink:0}
+.cancel-btn svg{width:15px;height:15px}
+.input-hint{text-align:center;font-size:11px;color:#3f3f46;margin-top:8px}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside>
+  <div class="sb-header">
+    <button class="btn-new">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      New Chat
+    </button>
+  </div>
+
+  <div class="sessions">
+    <button class="session active">
+      <svg class="session-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+      <div class="session-body">
+        <div class="session-title">How do I reverse a string in Py…</div>
+        <div class="session-time">just now</div>
+      </div>
+    </button>
+    <button class="session">
+      <svg class="session-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+      <div class="session-body">
+        <div class="session-title">Explain quantum entanglement</div>
+        <div class="session-time">2h ago</div>
+      </div>
+    </button>
+    <button class="session">
+      <svg class="session-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+      <div class="session-body">
+        <div class="session-title">Write a cover letter for a develo…</div>
+        <div class="session-time">yesterday</div>
+      </div>
+    </button>
+    <button class="session">
+      <svg class="session-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+      <div class="session-body">
+        <div class="session-title">SQL query optimization tips</div>
+        <div class="session-time">2d ago</div>
+      </div>
+    </button>
+  </div>
+
+  <div class="sb-bottom">
+    <div>
+      <div class="label">Model</div>
+      <div class="select-wrap">
+        <select class="model-select">
+          <option>Gemini 2.0 Flash — Fast &amp; efficient</option>
+          <option>Gemini 2.5 Pro — Most capable</option>
+          <option>Gemini 1.5 Pro — Balanced</option>
+        </select>
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </div>
+    </div>
+    <div>
+      <button class="sys-prompt-btn">
+        <span>System Prompt</span>
+        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main>
+  <header>
+    <button class="icon-btn">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
+    </button>
+  </header>
+
+  <div class="messages">
+    <div class="msg-list">
+
+      <!-- User -->
+      <div class="msg-row user">
+        <div class="bubble-wrap">
+          <div class="bubble"><p>How do I reverse a string in Python? Show me a few different ways.</p></div>
+          <div class="msg-footer"><span class="ts">just now</span></div>
+        </div>
+      </div>
+
+      <!-- Assistant -->
+      <div class="msg-row model">
+        <div class="bubble-wrap">
+          <div class="bubble">
+            <div class="bubble-text">
+              <p>There are several ways to reverse a string in Python:</p>
+              <p><strong>1. Slicing (most Pythonic)</strong></p>
+              <div class="code-block"><code>s = <span class="str">"hello"</span>
+reversed_s = s[::<span class="num">-1</span>]
+<span class="fn">print</span>(reversed_s)  <span class="cm"># "olleh"</span></code></div>
+              <p><strong>2. Using <span class="code-inline">reversed()</span> + <span class="code-inline">join()</span></strong></p>
+              <div class="code-block"><code>reversed_s = <span class="str">""</span>.<span class="fn">join</span>(<span class="fn">reversed</span>(s))</code></div>
+              <p><strong>3. Loop</strong></p>
+              <div class="code-block"><code><span class="kw">for</span> char <span class="kw">in</span> s:
+    result = char + result</code></div>
+              <p style="font-size:12px;color:#71717a;margin-top:8px">The slicing method <span class="code-inline">[::-1]</span> is generally preferred for brevity.</p>
+            </div>
+          </div>
+          <div class="msg-footer">
+            <span class="ts">just now</span>
+            <button class="copy-btn"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- User -->
+      <div class="msg-row user">
+        <div class="bubble-wrap">
+          <div class="bubble"><p>Which one is fastest for large strings?</p></div>
+          <div class="msg-footer"><span class="ts">just now</span></div>
+        </div>
+      </div>
+
+      <!-- Typing indicator -->
+      <div class="msg-row model">
+        <div class="bubble-wrap">
+          <div class="bubble">
+            <div class="dots">
+              <div class="dot"></div>
+              <div class="dot"></div>
+              <div class="dot"></div>
+            </div>
+          </div>
+          <div class="msg-footer"><span class="ts">just now</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- INPUT BAR -->
+  <div class="input-area">
+    <div class="input-inner">
+      <div class="input-box">
+        <textarea rows="1" placeholder="Message Gemini… (Shift+Enter for newline)"></textarea>
+        <span class="char-count">47</span>
+        <button class="cancel-btn">
+          <svg fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+        </button>
+      </div>
+      <div class="input-hint">Gemini can make mistakes. Verify important information.</div>
+    </div>
+  </div>
+</main>
+
+</body>
+</html>
